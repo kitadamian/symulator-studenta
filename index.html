@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Symulator Studenta - Damian Kita</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Poppins', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            touch-action: manipulation;
+            transition: background-color 0.3s ease;
+            overflow: hidden;
+        }
+
+        .status-bar {
+            transition: width 0.5s ease-in-out;
+        }
+
+        #game-container {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            transition: background-color 0.3s ease;
+        }
+
+        .scroll-area {
+            flex: 1;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .scroll-area::-webkit-scrollbar {
+            width: 4px;
+        }
+        .scroll-area::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+        
+        .dark .scroll-area::-webkit-scrollbar-thumb {
+            background: #475569;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 dark:bg-slate-900">
+
+    <div id="game-container" class="max-w-md mx-auto bg-white dark:bg-slate-800 shadow-2xl relative">
+        
+        <!-- Header / Stats -->
+        <div class="p-4 bg-indigo-600 dark:bg-indigo-900 text-white sticky top-0 z-10 transition-colors">
+            <div class="flex justify-between items-center mb-4">
+                <h1 class="font-bold text-lg">Symulator Studenta</h1>
+                <div class="flex items-center gap-2">
+                    <button onclick="toggleDarkMode()" id="dark-mode-btn" class="bg-indigo-500 dark:bg-indigo-700 p-1.5 rounded-lg text-sm">
+                        🌙
+                    </button>
+                    <div id="game-time" class="text-sm font-mono bg-indigo-800 dark:bg-black/30 px-2 py-1 rounded">Dzień 1, 08:00</div>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-3 text-xs">
+                <div>
+                    <div class="flex justify-between mb-1">
+                        <span>Energia</span>
+                        <span id="val-energy">100%</span>
+                    </div>
+                    <div class="w-full bg-indigo-900/50 rounded-full h-2">
+                        <div id="bar-energy" class="bg-yellow-400 h-2 rounded-full status-bar" style="width: 100%"></div>
+                    </div>
+                </div>
+                <div>
+                    <div class="flex justify-between mb-1">
+                        <span>Głód</span>
+                        <span id="val-hunger">0%</span>
+                    </div>
+                    <div class="w-full bg-indigo-900/50 rounded-full h-2">
+                        <div id="bar-hunger" class="bg-red-400 h-2 rounded-full status-bar" style="width: 0%"></div>
+                    </div>
+                </div>
+                <div>
+                    <div class="flex justify-between mb-1">
+                        <span>Wiedza</span>
+                        <span id="val-knowledge">0%</span>
+                    </div>
+                    <div class="w-full bg-indigo-900/50 rounded-full h-2">
+                        <div id="bar-knowledge" class="bg-green-400 h-2 rounded-full status-bar" style="width: 0%"></div>
+                    </div>
+                </div>
+                <div>
+                    <div class="flex justify-between mb-1">
+                        <span>Portfel</span>
+                        <span id="val-money">50 PLN</span>
+                    </div>
+                    <div class="w-full bg-indigo-900/50 rounded-full h-2">
+                        <div id="bar-money" class="bg-emerald-400 h-2 rounded-full status-bar" style="width: 50%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Game Area -->
+        <div class="scroll-area p-4 space-y-4 pb-24">
+            
+            <div id="event-log" class="bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 p-3 rounded-lg text-sm h-24 overflow-y-auto mb-4 italic text-slate-600 dark:text-slate-400">
+                Witaj na uczelni! Pamiętaj o nauce, ale nie zapomnij o jedzeniu i spaniu.
+            </div>
+
+            <!-- Action Cards -->
+            <div class="grid grid-cols-1 gap-3">
+                <button onclick="handleAction('study')" class="flex items-center p-4 bg-white dark:bg-slate-700 border-2 border-slate-100 dark:border-slate-600 rounded-xl hover:border-indigo-300 dark:hover:border-indigo-500 transition-all text-left">
+                    <div class="bg-indigo-100 dark:bg-indigo-900/50 p-3 rounded-lg mr-4 text-2xl">📚</div>
+                    <div>
+                        <div class="font-bold dark:text-white">Idź na wykład</div>
+                        <div class="text-xs text-slate-500 dark:text-slate-400">-15% Energii, +10% Wiedzy (2h)</div>
+                    </div>
+                </button>
+
+                <button onclick="handleAction('eat')" class="flex items-center p-4 bg-white dark:bg-slate-700 border-2 border-slate-100 dark:border-slate-600 rounded-xl hover:border-orange-300 dark:hover:border-orange-500 transition-all text-left">
+                    <div class="bg-orange-100 dark:bg-orange-900/50 p-3 rounded-lg mr-4 text-2xl">🍕</div>
+                    <div>
+                        <div class="font-bold dark:text-white">Zjedz pizzę</div>
+                        <div class="text-xs text-slate-500 dark:text-slate-400">-20 PLN, -40% Głodu (1h)</div>
+                    </div>
+                </button>
+
+                <button onclick="handleAction('work')" class="flex items-center p-4 bg-white dark:bg-slate-700 border-2 border-slate-100 dark:border-slate-600 rounded-xl hover:border-emerald-300 dark:hover:border-emerald-500 transition-all text-left">
+                    <div class="bg-emerald-100 dark:bg-emerald-900/50 p-3 rounded-lg mr-4 text-2xl">💼</div>
+                    <div>
+                        <div class="font-bold dark:text-white">Praca dorywcza</div>
+                        <div class="text-xs text-slate-500 dark:text-slate-400">-25% Energii, +40 PLN (4h)</div>
+                    </div>
+                </button>
+
+                <button onclick="handleAction('sleep')" class="flex items-center p-4 bg-white dark:bg-slate-700 border-2 border-slate-100 dark:border-slate-600 rounded-xl hover:border-blue-300 dark:hover:border-blue-500 transition-all text-left">
+                    <div class="bg-blue-100 dark:bg-blue-900/50 p-3 rounded-lg mr-4 text-2xl">💤</div>
+                    <div>
+                        <div class="font-bold dark:text-white">Idź spać</div>
+                        <div class="text-xs text-slate-500 dark:text-slate-400">Regeneruje energię (8h)</div>
+                    </div>
+                </button>
+
+                <button onclick="startQuiz()" class="flex items-center p-4 bg-white dark:bg-slate-700 border-2 border-indigo-500 dark:border-indigo-400 rounded-xl hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition-all text-left shadow-sm">
+                    <div class="bg-indigo-500 p-3 rounded-lg mr-4 text-white text-2xl">⚡</div>
+                    <div>
+                        <div class="font-bold text-indigo-600 dark:text-indigo-400">Szybki Quiz Wiedzy</div>
+                        <div class="text-xs text-slate-500 dark:text-slate-300">Sprawdź się i zyskaj bonusy!</div>
+                    </div>
+                </button>
+            </div>
+        </div>
+
+        <!-- Audio Controls -->
+        <div class="absolute bottom-24 right-4 flex flex-col space-y-2 z-20">
+            <button id="toggle-music" onclick="toggleMusic()" class="bg-white/80 dark:bg-slate-700/80 backdrop-blur p-3 rounded-full shadow-lg border border-slate-200 dark:border-slate-600 text-xl">
+                🔇
+            </button>
+        </div>
+
+        <!-- Footer / Credits -->
+        <div class="p-3 bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700 text-center sticky bottom-0 z-10">
+            <p class="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-widest font-bold mb-1">Autor gry</p>
+            <a href="https://linktr.ee/kitadamian" target="_blank" class="text-xs text-indigo-600 dark:text-indigo-400 font-semibold hover:underline">Damian Kita</a>
+        </div>
+
+        <!-- Quiz Modal -->
+        <div id="quiz-modal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div class="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-sm p-6 shadow-2xl border border-slate-200 dark:border-slate-700">
+                <div id="quiz-content">
+                    <h2 class="text-xl font-bold mb-4 dark:text-white" id="quiz-question">Pytanie?</h2>
+                    <div id="quiz-options" class="space-y-3">
+                        <!-- Opcje quizu -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Game Over Modal -->
+        <div id="gameover-modal" class="hidden fixed inset-0 bg-red-900/90 z-[60] flex items-center justify-center p-4 text-white text-center">
+            <div>
+                <h2 class="text-4xl font-bold mb-4">Koniec Gry!</h2>
+                <p id="death-reason" class="mb-6">Padłeś z wycieńczenia.</p>
+                <button onclick="location.reload()" class="bg-white text-red-600 px-8 py-3 rounded-full font-bold shadow-lg active:scale-95 transition-transform">Zacznij od nowa</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- THEME ENGINE ---
+        function toggleDarkMode() {
+            const isDark = document.documentElement.classList.toggle('dark');
+            localStorage.setItem('student-sim-darkmode', isDark);
+            document.getElementById('dark-mode-btn').innerText = isDark ? '☀️' : '🌙';
+            playSound(1200, 'sine', 0.05, 0.02);
+        }
+
+        function initTheme() {
+            const saved = localStorage.getItem('student-sim-darkmode');
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            if (saved === 'true' || (saved === null && prefersDark)) {
+                document.documentElement.classList.add('dark');
+                document.getElementById('dark-mode-btn').innerText = '☀️';
+            }
+        }
+
+        // --- GAME STATE ---
+        let state = {
+            day: 1,
+            hour: 8,
+            energy: 100,
+            hunger: 0,
+            knowledge: 0,
+            money: 50,
+            isGameOver: false,
+            musicPlaying: false
+        };
+
+        const QUIZ_QUESTIONS = [
+            { q: "Co oznacza skrót HTML?", a: ["HyperText Markup Language", "High Tech Modern Language", "Home Tool Markup Link"], correct: 0 },
+            { q: "Która planeta jest najbliżej Słońca?", a: ["Mars", "Wenus", "Merkury"], correct: 2 },
+            { q: "Ile to jest 2 + 2 * 2?", a: ["8", "6", "4"], correct: 1 },
+            { q: "Kto napisał 'Pan Tadeusz'?", a: ["Słowacki", "Mickiewicz", "Prus"], correct: 1 },
+            { q: "Stolica Polski to?", a: ["Kraków", "Gdańsk", "Warszawa"], correct: 2 },
+            { q: "Jaki język służy do stylizacji stron?", a: ["Python", "CSS", "Java"], correct: 1 },
+            { q: "Co jest jednostką natężenia prądu?", a: ["Wolt", "Amper", "Om"], correct: 1 }
+        ];
+
+        // --- AUDIO ENGINE ---
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        let backgroundMusicActive = false;
+
+        function playSound(freq, type, duration, vol = 0.1) {
+            try {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + duration);
+            } catch(e) {}
+        }
+
+        function toggleMusic() {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            
+            if (!backgroundMusicActive) {
+                backgroundMusicActive = true;
+                playBackgroundMusic();
+                document.getElementById('toggle-music').innerText = '🔊';
+            } else {
+                backgroundMusicActive = false;
+                document.getElementById('toggle-music').innerText = '🔇';
+            }
+        }
+
+        function playBackgroundMusic() {
+            const melody = [261.63, 329.63, 392.00, 523.25, 392.00, 329.63];
+            let i = 0;
+            
+            function loop() {
+                if (!backgroundMusicActive) return;
+                playSound(melody[i], 'triangle', 0.6, 0.03);
+                i = (i + 1) % melody.length;
+                setTimeout(loop, 600);
+            }
+            loop();
+        }
+
+        // --- GAME LOGIC ---
+        function updateUI() {
+            document.getElementById('val-energy').innerText = state.energy + '%';
+            document.getElementById('bar-energy').style.width = state.energy + '%';
+            
+            document.getElementById('val-hunger').innerText = state.hunger + '%';
+            document.getElementById('bar-hunger').style.width = state.hunger + '%';
+            
+            document.getElementById('val-knowledge').innerText = state.knowledge + '%';
+            document.getElementById('bar-knowledge').style.width = Math.min(state.knowledge, 100) + '%';
+            
+            document.getElementById('val-money').innerText = state.money + ' PLN';
+            document.getElementById('bar-money').style.width = Math.min(state.money, 100) + '%';
+            
+            const displayHour = state.hour < 10 ? '0' + state.hour : state.hour;
+            document.getElementById('game-time').innerText = `Dzień ${state.day}, ${displayHour}:00`;
+
+            checkGameOver();
+        }
+
+        function logEvent(msg) {
+            const log = document.getElementById('event-log');
+            const entry = document.createElement('div');
+            entry.innerHTML = `> ${msg}`;
+            log.prepend(entry);
+        }
+
+        function passTime(hours) {
+            state.hour += hours;
+            state.hunger = Math.min(100, state.hunger + hours * 4);
+            if (state.hour >= 24) {
+                state.hour -= 24;
+                state.day += 1;
+                logEvent("Zaczął się nowy dzień!");
+            }
+            updateUI();
+        }
+
+        function handleAction(action) {
+            if (state.isGameOver) return;
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            playSound(440, 'sine', 0.1);
+
+            switch(action) {
+                case 'study':
+                    if (state.energy >= 15) {
+                        state.energy -= 15;
+                        state.knowledge += 10;
+                        logEvent("Uczyłeś się pilnie na wykładzie.");
+                        passTime(2);
+                    } else {
+                        logEvent("Jesteś zbyt zmęczony na naukę!");
+                    }
+                    break;
+                case 'eat':
+                    if (state.money >= 20) {
+                        state.money -= 20;
+                        state.hunger = Math.max(0, state.hunger - 40);
+                        logEvent("Zjadłeś pyszną pizzę.");
+                        passTime(1);
+                        playSound(660, 'sine', 0.2);
+                    } else {
+                        logEvent("Nie masz pieniędzy na jedzenie!");
+                    }
+                    break;
+                case 'work':
+                    if (state.energy >= 25) {
+                        state.energy -= 25;
+                        state.money += 40;
+                        logEvent("Popracowałeś trochę w kawiarni.");
+                        passTime(4);
+                    } else {
+                        logEvent("Nie masz siły do pracy!");
+                    }
+                    break;
+                case 'sleep':
+                    logEvent("Śpisz... Dobranoc.");
+                    state.energy = Math.min(100, state.energy + 60);
+                    state.hunger = Math.min(100, state.hunger + 15);
+                    passTime(8);
+                    break;
+            }
+        }
+
+        function checkGameOver() {
+            if (state.hunger >= 100) {
+                endGame("Zmarłeś z głodu. Student też musi jeść!");
+            } else if (state.energy <= 0 && state.hunger > 60) {
+                endGame("Padłeś z wycieńczenia pod drzwiami uczelni.");
+            }
+        }
+
+        function endGame(reason) {
+            state.isGameOver = true;
+            document.getElementById('death-reason').innerText = reason;
+            document.getElementById('gameover-modal').classList.remove('hidden');
+            playSound(110, 'sawtooth', 1, 0.2);
+        }
+
+        // --- QUIZ SYSTEM ---
+        function startQuiz() {
+            const quiz = QUIZ_QUESTIONS[Math.floor(Math.random() * QUIZ_QUESTIONS.length)];
+            const modal = document.getElementById('quiz-modal');
+            const qTitle = document.getElementById('quiz-question');
+            const qOptions = document.getElementById('quiz-options');
+
+            qTitle.innerText = quiz.q;
+            qOptions.innerHTML = '';
+            
+            quiz.a.forEach((opt, index) => {
+                const btn = document.createElement('button');
+                btn.className = "w-full p-3 border dark:border-slate-600 rounded-lg hover:bg-indigo-100 dark:hover:bg-indigo-900/50 dark:text-white transition-colors text-left";
+                btn.innerText = opt;
+                btn.onclick = () => checkQuizAnswer(index, quiz.correct);
+                qOptions.appendChild(btn);
+            });
+
+            modal.classList.remove('hidden');
+        }
+
+        function checkQuizAnswer(selected, correct) {
+            const modal = document.getElementById('quiz-modal');
+            if (selected === correct) {
+                state.knowledge += 15;
+                state.energy = Math.min(100, state.energy + 5);
+                logEvent("Brawo! Prawidłowa odpowiedź. +15% Wiedzy.");
+                playSound(880, 'sine', 0.1);
+                setTimeout(() => playSound(1100, 'sine', 0.1), 100);
+            } else {
+                state.energy = Math.max(0, state.energy - 10);
+                logEvent("Błędna odpowiedź! Tracisz energię na myślenie.");
+                playSound(220, 'square', 0.3);
+            }
+            modal.classList.add('hidden');
+            updateUI();
+        }
+
+        // Inicjalizacja
+        window.onload = () => {
+            initTheme();
+            updateUI();
+        };
+
+    </script>
+</body>
+</html>
